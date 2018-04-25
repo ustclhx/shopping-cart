@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import requests
-
+import json
 from conftest import url
 
 
@@ -27,8 +27,12 @@ def test_malformed_json_error():
 
 
 def test_auth_error():
-    res = requests.get(url + "/items")
-
+    data={"access_token":" "}
+    res = requests.get(
+        url + "/items",
+        #data=json.dumps(data),
+		json=data
+    )
     assert res.status_code == 401
     assert res.json() == {"code": "INVALID_ACCESS_TOKEN",
                           "message": u"无效的令牌"}

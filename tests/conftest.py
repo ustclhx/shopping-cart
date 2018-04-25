@@ -84,22 +84,28 @@ _session.mount("http://", requests.adapters.HTTPAdapter(max_retries=10))
 
 
 def json_get(path, tk):
-    return _session.get(url + path, headers={"Access-Token": tk}, timeout=3)
+    data={"access_token":tk}
+    return _session.get(url + path, json=data, timeout=3)
 
 
 def json_post(path, tk, data=None):
+    if data==None:
+		da={"access_token":tk}
+    else:
+        da=data.copy()
+        da["access_token"]=tk
     return _session.post(
         url + path,
-        json=data,
-        headers={"Access-Token": tk},
+        json=da,
         timeout=3)
 
 
 def json_patch(path, tk, data):
+    da=data.copy()
+    da["access_token"]=tk
     return _session.patch(
         url + path,
-        json=data,
-        headers={"Access-Token": tk},
+        json=da,
         timeout=3)
 
 

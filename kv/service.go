@@ -12,13 +12,13 @@ import (
 )
 
 type KVStore struct {
-	data map[string]string
+	Data map[string]string
 
 	// RwLock is the publi Read-Write Mutex, which can
 	// be used in the extended KV-Store.
 	RwLock sync.RWMutex
 
-	dead       int32 // for testing
+	Dead       int32 // for testing
 	unreliable int32 // for testing
 
 	// debug

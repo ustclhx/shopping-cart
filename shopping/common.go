@@ -1,25 +1,20 @@
 package shopping
 
-// The type of ID for Item and User is int.
-// To differ the two from others, we specify the
-// field IDStr to indicate the its type is string,
-// otherwise int.
-
-import (
+import(
 	"bytes"
 	"strconv"
 	"strings"
 )
 
+type LoginJson struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
 type Item struct {
 	ID    int `json:"id"`
 	Price int `json:"price"`
 	Stock int `json:"stock"`
-}
-
-type LoginJson struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
 }
 
 type Order struct {
@@ -35,10 +30,25 @@ type ItemCount struct {
 	Count  int `json:"count"`
 }
 
-// for GET /admin/orders
-type OrderDetail struct {
-	Order
-	UserID int `json:"user_id"`
+type UserIDAndPass struct {
+	ID       int
+	Password string
+}
+
+type SubmitOrderArgs struct {
+	CartIDStr string
+	UserToken string
+	CartValue string
+}
+
+type PayOrderArgs struct {
+	OrderIDStr string
+	UserToken  string
+	Delta      int
+}
+
+type AccessTokenJson struct{
+	Token string `json:"access_token"`
 }
 
 type CartIDJson struct {
@@ -47,16 +57,6 @@ type CartIDJson struct {
 
 type OrderIDJson struct {
 	IDStr string `json:"order_id"`
-}
-
-type UserIDAndPass struct {
-	ID       int
-	Password string
-}
-
-func getCartKey(cartIDStr, token string) (cartKey string) {
-	cartKey = "cart:" + cartIDStr + ":" + token
-	return
 }
 
 func userID2Token(userID int) string {
@@ -71,31 +71,8 @@ func token2UserID(token string) int {
 	}
 }
 
-func composeOrderValue(hasPaid bool, price, num int, detail map[int]int) string {
-	var info [3]string
-	if hasPaid {
-		info[0] = OrderPaidFlag
-	} else {
-		info[0] = OrderUnpaidFlag
-	}
-	info[1] = strconv.Itoa(price)
-	info[2] = composeCartValue(num, detail)
-	return strings.Join(info[:], "|")
-}
-
-func parseOrderValue(value string) (hasPaid bool, price, num int, detail map[int]int) {
-	info := strings.Split(value, "|")
-	if info[0] == OrderPaidFlag {
-		hasPaid = true
-	} else {
-		hasPaid = false
-	}
-
-	if len(info) != 3 {
-		panic(value)
-	}
-	price, _ = strconv.Atoi(info[1])
-	num, detail = parseCartValue(info[2])
+func getCartKey(cartIDStr, token string) (cartKey string) {
+	cartKey = "cart:" + cartIDStr + ":" + token
 	return
 }
 
@@ -148,4 +125,31 @@ func composeCartValue(num int, cartDetail map[int]int) (cartDetailStr string) {
 		panic("total value error")
 	}
 	return buffer.String()
+}
+
+func composeOrderValue(hasPaid bool, price, num int, detail map[int]int) string {
+	var info [3]string
+	if hasPaid {
+		info[0] = OrderPaidFlag
+	} else {
+		info[0] = OrderUnpaidFlag
+	}
+	info[1] = strconv.Itoa(price)
+	info[2] = composeCartValue(num, detail)
+	return strings.Join(info[:], "|")
+}
+func parseOrderValue(value string) (hasPaid bool, price, num int, detail map[int]int) {
+	info := strings.Split(value, "|")
+	if info[0] == OrderPaidFlag {
+		hasPaid = true
+	} else {
+		hasPaid = false
+	}
+
+	if len(info) != 3 {
+		panic(value)
+	}
+	price, _ = strconv.Atoi(info[1])
+	num, detail = parseCartValue(info[2])
+	return
 }
