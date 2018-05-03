@@ -9,6 +9,7 @@ import (
 	"io"
 	"io/ioutil"
 	"math/rand"
+	//"distributed-system/http"
 	"net/http"
 	"net/url"
 	"os"
@@ -96,16 +97,27 @@ type RequestLogin struct {
 	Password string `json:"password"`
 }
 
+type RequestGetItem struct{
+    AccessToken string `json:"access_token"`
+}
+
+type RequestCreatCare struct{
+    AccessToken string `json:"access_token"`
+}
+
 type RequestCartAddItem struct {
+    AccessToken string `json:"access_token"`
 	ItemId int `json:"item_id"`
 	Count  int `json:"count"`
 }
 
 type RequestMakeOrder struct {
+    AccessToken string `json:"access_token"`
 	CartId string `json:"cart_id"`
 }
 
 type RequestPayOrder struct {
+    AccessToken string `json:"access_token"`
 	OrderId string `json:"order_id"`
 }
 
@@ -220,21 +232,30 @@ func (w *Worker) Url(path string, params url.Values) string {
 }
 
 // Get json from uri.
-func (w *Worker) Get(c *http.Client, url string, bind interface{}) (int, error) {
-	r, err := c.Get(url)
+func (w *Worker) Get(c *http.Client, url string,data interface{}, bind interface{}) (int, error) {
+    bs, err := json.Marshal(data)
 	if err != nil {
-		if r != nil {
-			ioutil.ReadAll(r.Body)
-			r.Body.Close()
+		return 0, err
+	}
+	req, err := http.NewRequest("GET", url, bytes.NewReader(bs))
+	if err != nil {
+		return 0, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	res, err := c.Do(req)
+	if err != nil {
+		if res != nil {
+			ioutil.ReadAll(res.Body)
+			res.Body.Close()
 		}
 		return 0, err
 	}
-	defer r.Body.Close()
-	err = json.NewDecoder(r.Body).Decode(bind)
+	defer res.Body.Close()
+	err = json.NewDecoder(res.Body).Decode(bind)
 	if bind == nil {
-		return r.StatusCode, nil
+		return res.StatusCode, nil
 	}
-	return r.StatusCode, err
+	return res.StatusCode, err
 }
 
 // Post json to uri and get json response.
@@ -339,8 +360,9 @@ func (ctx *Context) Login() bool {
 
 func (ctx *Context) GetItems() bool {
 	// body := &ResponseGetItems{}
-	url := ctx.UrlWithToken("/items")
-	statusCode, err := ctx.w.Get(ctx.c, url, nil)
+	url := ctx.w.Url("/items",nil)
+	data :=&RequestGetItem{ctx.user.AccessToken}
+	statusCode, err := ctx.w.Get(ctx.c, url,data, nil)
 	if err != nil {
 		if isDebugMode {
 			fmt.Printf("Request get items error: %v\n", err)
@@ -358,8 +380,9 @@ func (ctx *Context) GetItems() bool {
 
 func (ctx *Context) CreateCart() bool {
 	body := &ResponseCreateCart{}
-	url := ctx.UrlWithToken("/carts")
-	statusCode, err := ctx.w.Post(ctx.c, url, nil, body)
+	url :=  ctx.w.Url("/carts",nil)
+	data :=&RequestGetItem{ctx.user.AccessToken}
+	statusCode, err := ctx.w.Post(ctx.c, url, data, body)
 	if err != nil {
 		if isDebugMode {
 			fmt.Printf("Request create carts error: %v\n", err)
@@ -378,9 +401,9 @@ func (ctx *Context) CreateCart() bool {
 
 func (ctx *Context) CartAddItem() bool {
 	path := fmt.Sprintf("/carts/%s", ctx.cartId)
-	url := ctx.UrlWithToken(path)
+	url := ctx.w.Url(path,nil)
 	item := GetRandItem()
-	data := &RequestCartAddItem{item.Id, 1}
+	data := &RequestCartAddItem{ctx.user.AccessToken,item.Id, 1}
 	statusCode, err := ctx.w.Patch(ctx.c, url, data, nil)
 	if err != nil {
 		if isDebugMode {
@@ -408,9 +431,9 @@ func (ctx *Context) MakeOrder() bool {
 			return false
 		}
 	}
-	data := &RequestMakeOrder{ctx.cartId}
+	data := &RequestMakeOrder{ctx.user.AccessToken,ctx.cartId}
 	body := &ResponseMakeOrder{}
-	url := ctx.UrlWithToken("/orders")
+	url := ctx.w.Url("/orders",nil)
 	statusCode, err := ctx.w.Post(ctx.c, url, data, body)
 	if err != nil {
 		if isDebugMode {
@@ -432,8 +455,8 @@ func (ctx *Context) PayOrder() bool {
 	if !ctx.MakeOrder() {
 		return false
 	}
-	url := ctx.UrlWithToken("/pay")
-	data := &RequestPayOrder{ctx.orderId}
+	url := ctx.w.Url("/pay",nil)
+	data := &RequestPayOrder{ctx.user.AccessToken,ctx.orderId}
 	body := &ResponsePayOrder{}
 	statusCode, err := ctx.w.Post(ctx.c, url, data, body)
 	if err != nil {

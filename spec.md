@@ -108,7 +108,10 @@ POST /login
 #### 请求示例
 
 ```
-GET /items?access_token=xxx
+GET /items
+{
+    "access_token":"xxx"
+}
 ```
 
 #### 响应示例
@@ -130,8 +133,10 @@ GET /items?access_token=xxx
 #### 请求示例
 
 ```
-POST /carts?access_token=xxx
-
+POST /carts?
+{
+    "access_token":"xxx"
+}
 ```
 
 #### 响应示例
@@ -158,8 +163,9 @@ count | int | 添加的物品数量
 #### 请求示例
 
 ```
-PATCH /carts/e0c68eb96bd8495dbb8fcd8e86fc48a3?access_token=xxx
+PATCH /carts/e0c68eb96bd8495dbb8fcd8e86fc48a3
 {
+    "access_token":"xxx"
     "item_id": 2,
     "count": 1
 }
@@ -228,8 +234,9 @@ cart_id | string | 篮子id
 #### 请求示例
 
 ```
-POST /orders?access_token=xxx
+POST /orders
 {
+    "access_token":"xxx"
     "cart_id": "e0c68eb96bd8495dbb8fcd8e86fc48a3"
 }
 ```
@@ -307,8 +314,9 @@ order_id | string | 订单id
 #### 请求示例
 
 ```
-POST /pay?access_token=xxx
+POST /pay
 {
+    "access_token":"xxx"
     "order_id": "e0c68eb96bd8495dbb8fcd8e86fc48a3"
 }
 ```
